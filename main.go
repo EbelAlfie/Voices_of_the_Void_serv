@@ -5,11 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"votv.co/model"
 )
 
 var upgrader = websocket.Upgrader { }
-var sockets map[string]websocket.Conn = make(map[string]websocket.Conn)
+var sockets map[string]*websocket.Conn = make(map[string]*websocket.Conn)
 
 func main() {
 	server := http.NewServeMux()
@@ -24,31 +23,33 @@ func main() {
 			return 
 		}
 
-		newSocket := model.SocketModel{
-			Id: id,
-			Ws: wsConn,
-		}
-
-		sockets = append(sockets, newSocket)
+		sockets[id] = wsConn
 	})
 
 	server.HandleFunc("/respond", func(w http.ResponseWriter, r *http.Request) {
-	
-		sockets[0].Ws.WriteJSON(struct {
+		uid := []byte {}
+		_, err := r.Body.Read(uid)
+
+		if err != nil {
+			fmt.Println("read error")
+			return //TODO clean up
+		}
+
+		sockets[string(uid)].WriteJSON(struct {
 			From string `json:"from"`
 		} {
 			From: "Saya",
 		})
 	})
 
-	server.HandleFunc("/route-call", func(w http.ResponseWriter, r *http.Request) {
+	// server.HandleFunc("/route-call", func(w http.ResponseWriter, r *http.Request) {
 		
-		sockets[0].Ws.WriteJSON(struct {
-			From string `json:"from"`
-		} {
-			From: "Saya",
-		})
-	})
+	// 	sockets[0].Ws.WriteJSON(struct {
+	// 		From string `json:"from"`
+	// 	} {
+	// 		From: "Saya",
+	// 	})
+	// })
 
 	http.ListenAndServe("0.0.0.0:3001", server)
 }
