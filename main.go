@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -14,10 +15,8 @@ func main() {
 	server := http.NewServeMux()
 
 	server.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		
 		id := r.URL.Query().Get("uid")
 		wsConn, err := upgrader.Upgrade(w, r, nil)
-
 		if err != nil {
 			fmt.Print("WS connection error " + err.Error())
 			return 
@@ -26,30 +25,37 @@ func main() {
 		sockets[id] = wsConn
 	})
 
-	server.HandleFunc("/respond", func(w http.ResponseWriter, r *http.Request) {
-		uid := []byte {}
-		_, err := r.Body.Read(uid)
+	server.HandleFunc("/postEvent", func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			Uid string `json:"uid"`
+			Message string `json:"message"`
+		}
+		decoder := json.NewDecoder(r.Body)
 
-		if err != nil {
-			fmt.Println("read error")
+		if err := decoder.Decode(&request); err != nil {
+			fmt.Println("read error " + err.Error())
 			return //TODO clean up
 		}
 
-		sockets[string(uid)].WriteJSON(struct {
-			From string `json:"from"`
-		} {
-			From: "Saya",
-		})
+		uid := request.Uid
+		if socket := sockets[uid]; socket != nil {
+			socket.WriteJSON(struct {
+				From string `json:"from"`
+			} {
+				From: "Saya",
+			})
+		}
+	
 	})
 
-	// server.HandleFunc("/route-call", func(w http.ResponseWriter, r *http.Request) {
+	server.HandleFunc("/route-call", func(w http.ResponseWriter, r *http.Request) {
 		
-	// 	sockets[0].Ws.WriteJSON(struct {
-	// 		From string `json:"from"`
-	// 	} {
-	// 		From: "Saya",
-	// 	})
-	// })
+		// sockets[0].Ws.WriteJSON(struct {
+		// 	From string `json:"from"`
+		// } {
+		// 	From: "Saya",
+		// })
+	})
 
 	http.ListenAndServe("0.0.0.0:3001", server)
 }
