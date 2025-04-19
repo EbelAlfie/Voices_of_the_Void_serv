@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"votv.co/model"
+	"votv.co/utils"
 )
 
 var upgrader = websocket.Upgrader { }
@@ -22,19 +23,41 @@ func main() {
 			return 
 		}
 
+		if sockets[id] != nil {
+			delete(sockets, id)
+		}
+
+		fmt.Println("New Socket Registered " + id)
 		sockets[id] = wsConn
 	})
 
 	server.HandleFunc("/postEvent", func(w http.ResponseWriter, r *http.Request) {
-		var request struct {
-			Uid string `json:"uid"`
-			Message string `json:"message"`
-		}
-		decoder := json.NewDecoder(r.Body)
+		request, err := utils.GetRequest(r)
 
-		if err := decoder.Decode(&request); err != nil {
-			fmt.Println("read error " + err.Error())
-			return //TODO clean up
+		if err != nil {
+			fmt.Println("Uid not found")
+			return 
+		}
+
+		uid := request.Uid
+		if socket := sockets[uid]; socket != nil {
+			println("Sending Request")
+			socket.WriteJSON(
+				model.IncomingMessage {
+					Type: "incoming.message",
+					Message: request.Message,
+				},	
+			)
+		}
+	
+	})
+
+	server.HandleFunc("/route-call", func(w http.ResponseWriter, r *http.Request) {
+		request, err := utils.GetRequest(r)
+
+		if err != nil {
+			fmt.Println("Uid not found")
+			return 
 		}
 
 		uid := request.Uid
@@ -45,17 +68,13 @@ func main() {
 				From: "Saya",
 			})
 		}
-	
 	})
 
-	server.HandleFunc("/route-call", func(w http.ResponseWriter, r *http.Request) {
-		
-		// sockets[0].Ws.WriteJSON(struct {
-		// 	From string `json:"from"`
-		// } {
-		// 	From: "Saya",
-		// })
-	})
+	addr := "0.0.0.0:3001"
 
-	http.ListenAndServe("0.0.0.0:3001", server)
+	fmt.Println("Listening on " + addr)
+	err := http.ListenAndServe(addr, server)
+	if err != nil {
+		fmt.Println("Listen error")
+	}
 }
