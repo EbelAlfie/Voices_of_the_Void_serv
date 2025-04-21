@@ -1,0 +1,301 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        280
+      ],
+      "id": "993cdaa3-c7a6-43c0-a11e-cffa7892b8fe",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "YwQyWxrtCvgpk0Vy",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        0
+      ],
+      "id": "c63de266-7919-4367-b531-7453d04706ff",
+      "name": "Webhook",
+      "webhookId": "50fdb753-9ac1-45b5-b9c9-07a6441f33ba"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -220,
+        140
+      ],
+      "id": "22157c8f-8eab-4308-830f-87b68562b19d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ND2jKzQffoaGHqpE",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        240,
+        240
+      ],
+      "id": "46f2fd14-41b4-406a-9701-dbfc485a4938",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "40UR7swplILR6HZ4",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/postEvent",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "targetUid",
+              "value": "={{ $('Webhook').item.json.body.uid }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        840,
+        180
+      ],
+      "id": "29b70a01-40f2-47aa-8c1e-479f4a92ae7d",
+      "name": "Respond message"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a helpful assistant. You will try to answer all of my questions. You will only route the call if the prompt says that it wants to connect with a customer service"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        260,
+        0
+      ],
+      "id": "76b07198-db49-4c58-a4a7-88a77da64071",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n      \"shouldCall\": {\n        \"type\": \"boolean\"\n      },\n      \"message\": {\n        \"type\": \"string\"\n      }\n\t},\n  \"required\": [\"shouldCall\", \"message\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        460,
+        240
+      ],
+      "id": "44bbcde1-a505-4296-ba8c-ffba5d1dceed",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0be211e1-b780-42f8-abef-488faf68e1de",
+              "leftValue": "={{ $json.output.shouldCall }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        620,
+        0
+      ],
+      "id": "c221eedc-7d25-4532-ab34-713d53db44ad",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3001/route-call",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "targetUid",
+              "value": "={{ $('Webhook').item.json.body.uid }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.output.message }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        860,
+        -180
+      ],
+      "id": "1fdba6d2-81cb-4f90-87d2-54fe3977b994",
+      "name": "Route Call"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Route Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9deaac3a-28e7-4421-803e-dfa8d872c182",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6aa1832459ac103aca186ef1a9f8a5cb89719182873c66a1d2b54f11404078e3"
+  },
+  "id": "fmVVUMa6Rzu55yOz",
+  "tags": []
+}

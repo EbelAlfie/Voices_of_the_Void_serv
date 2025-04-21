@@ -46,7 +46,7 @@ func main() {
 				model.IncomingMessage {
 					Type: "incoming.message",
 					Message: request.Message,
-				},	
+				},
 			)
 		}
 	
@@ -62,10 +62,8 @@ func main() {
 
 		uid := request.Uid
 		if socket := sockets[uid]; socket != nil {
-			socket.WriteJSON(struct {
-				From string `json:"from"`
-			} {
-				From: "Saya",
+			socket.WriteJSON(model.CreateCall {
+				Type: "call.create",
 			})
 		}
 	})
