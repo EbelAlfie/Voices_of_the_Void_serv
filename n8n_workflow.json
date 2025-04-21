@@ -3,25 +3,6 @@
   "nodes": [
     {
       "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
-      "typeVersion": 1,
-      "position": [
-        -220,
-        280
-      ],
-      "id": "993cdaa3-c7a6-43c0-a11e-cffa7892b8fe",
-      "name": "DeepSeek Chat Model",
-      "credentials": {
-        "deepSeekApi": {
-          "id": "YwQyWxrtCvgpk0Vy",
-          "name": "DeepSeek account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "httpMethod": "POST",
         "path": "send",
         "options": {}
@@ -35,31 +16,6 @@
       "id": "c63de266-7919-4367-b531-7453d04706ff",
       "name": "Webhook",
       "webhookId": "50fdb753-9ac1-45b5-b9c9-07a6441f33ba"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-3.5-turbo",
-          "mode": "list",
-          "cachedResultName": "gpt-3.5-turbo"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -220,
-        140
-      ],
-      "id": "22157c8f-8eab-4308-830f-87b68562b19d",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "ND2jKzQffoaGHqpE",
-          "name": "OpenAi account"
-        }
-      }
     },
     {
       "parameters": {
@@ -214,11 +170,6 @@
   ],
   "pinData": {},
   "connections": {
-    "DeepSeek Chat Model": {
-      "ai_languageModel": [
-        []
-      ]
-    },
     "Webhook": {
       "main": [
         [
@@ -228,11 +179,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        []
       ]
     },
     "Groq Chat Model": {
